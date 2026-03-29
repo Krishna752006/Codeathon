@@ -118,6 +118,7 @@ function renderSkillsTable(analysis) {
         <thead>
           <tr style="border-bottom:2px solid var(--bg-tertiary); background:var(--bg-secondary);">
             <th style="padding:14px 16px; text-align:left; font-weight:600; font-size:13px; white-space:nowrap;">Skill</th>
+            <th style="padding:14px 16px; text-align:center; font-weight:600; font-size:13px; white-space:nowrap;">Your Level</th>
             <th style="padding:14px 16px; text-align:center; font-weight:600; font-size:13px; white-space:nowrap;">Demand</th>
             <th style="padding:14px 16px; text-align:center; font-weight:600; font-size:13px; white-space:nowrap;">Reward</th>
             <th style="padding:14px 16px; text-align:center; font-weight:600; font-size:13px; white-space:nowrap;">Risk</th>
@@ -134,6 +135,11 @@ function renderSkillsTable(analysis) {
             return `
               <tr style="border-bottom:1px solid var(--bg-tertiary); ${idx % 2 === 0 ? 'background:var(--bg-primary);' : ''}">
                 <td style="padding:14px 16px; font-weight:500; color:var(--text-primary);">${item.skill || 'N/A'}</td>
+                <td style="padding:14px 16px; text-align:center;">
+                  <div style="display:inline-block; background:rgba(147, 112, 219, 0.1); color:rgb(147, 112, 219); padding:4px 8px; border-radius:4px; font-weight:600; font-size:13px;">
+                    ${item.user_score || 0}/10
+                  </div>
+                </td>
                 <td style="padding:14px 16px; text-align:center;">
                   <div style="display:inline-block; background:var(--accent-primary-light); color:var(--accent-primary); padding:4px 8px; border-radius:4px; font-weight:600; font-size:13px;">
                     ${item.demand_score || 0}/10
@@ -197,10 +203,29 @@ export function bindOnboarding() {
       const file = e.target.files?.[0];
       if (!file) return;
 
+      const errorEl = document.getElementById('error');
+      const uploadForm = document.getElementById('upload-form');
+      const loadingEl = document.getElementById('loading');
 
-      document.getElementById('upload-form').style.display = 'none';
-      loading.style.display = 'block';
-      error.style.display = 'none';
+      const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        errorEl.textContent = `Invalid file type. Please upload an image (JPG, PNG, GIF, or WebP). You uploaded: ${file.type || 'unknown'}`;
+        errorEl.style.display = 'block';
+        resumeFile.value = '';
+        return;
+      }
+
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        errorEl.textContent = `File is too large. Maximum size is 5MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB`;
+        errorEl.style.display = 'block';
+        resumeFile.value = '';
+        return;
+      }
+
+      uploadForm.style.display = 'none';
+      loadingEl.style.display = 'block';
+      errorEl.style.display = 'none';
 
       try {
         const formData = new FormData();
@@ -212,7 +237,8 @@ export function bindOnboarding() {
         });
 
         if (!response.ok) {
-          throw new Error(`API error: ${response.statusText}`);
+          const errorData = await response.json().catch(() => ({ error: response.statusText }));
+          throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
         }
 
         const data = await response.json();
@@ -233,8 +259,9 @@ export function bindOnboarding() {
         console.error('Upload error:', err);
         error.textContent = `Error: ${err.message}`;
         error.style.display = 'block';
-        document.getElementById('upload-form').style.display = 'flex';
-        loading.style.display = 'none';
+        uploadForm.style.display = 'flex';
+        loadingEl.style.display = 'none';
+        resumeFile.value = '';
       }
     });
   }

@@ -72,6 +72,64 @@ function extractSkillsFromResume(resumeText) {
   return found.length > 0 ? found.join(", ") : "General Tech Skills";
 }
 
+async function validateResumeText(resumeText) {
+  try {
+    const validationPrompt = `
+You are a resume validator. Analyze the following text and determine if it is a professional resume or CV.
+
+Text to validate:
+${resumeText}
+
+Respond with ONLY a JSON object (no explanation, no markdown):
+{
+  "isResume": true or false,
+  "confidence": number between 0 and 1,
+  "reason": "brief reason"
+}
+
+Resume should contain at least some of these elements:
+- Professional experience/work history
+- Education
+- Skills
+- Contact information or professional summary
+- Job titles or roles
+
+Random screenshots, articles, or non-resume content should be rejected.`;
+
+    const response = await openai.chat.completions.create({
+      model: "Qwen/Qwen2.5-7B-Instruct",
+      max_tokens: 500,
+      temperature: 0.2,
+      messages: [
+        {
+          role: "system",
+          content: "You are a strict JSON validator. Return ONLY valid JSON without any explanation or markdown."
+        },
+        {
+          role: "user",
+          content: validationPrompt
+        }
+      ]
+    });
+
+    const responseText = response.choices[0].message.content;
+    console.log("Resume validation response:", responseText);
+
+    let jsonText = responseText;
+    const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonText = jsonMatch[1];
+    }
+
+    const result = JSON.parse(jsonText.trim());
+    return result;
+  } catch (error) {
+    console.error("Resume validation error:", error);
+
+    return { isResume: false, confidence: 0, reason: "Failed to validate resume format" };
+  }
+}
+
 async function analyzeSkillsWithAI(resumeText, skills) {
   const marketData = await searchMarketData(skills);
 
@@ -87,7 +145,7 @@ ${skills}
 Market Intelligence Data:
 ${marketData}
 
-Your task: Analyze each skill and provide strategic investment recommendations.
+Your task: Analyze each skill and provide strategic investment recommendations based on the user's current proficiency level.
 
 CRITICAL: Return ONLY valid JSON, nothing else. No markdown, no explanations.
 
@@ -112,20 +170,21 @@ Required JSON format:
 
 Scoring Rules:
 - All scores: 1-10 scale
-- demand_score: Market demand (1=low, 10=very high)
-- reward_score: Career ROI/salary potential (1=low, 10=very high)
-- user_score: User's current proficiency (1=novice, 10=expert)
-- risk_score: Market risk (1=low, 10=very high) - inverse to safety
+- user_score: User's current proficiency (1=novice, 10=expert) - BASE ALL OTHER SCORES ON THIS
+- demand_score: Market demand adjusted for user_score (if user_score is high, focus on maintaining; if low, higher urgency to learn)
+- reward_score: Career ROI potential weighted by user proficiency (higher reward for low user_score + high demand)
+- risk_score: Market risk inversely affected by user_score (high user_score = lower risk, can handle market changes better)
 - growth_trend: "very_high", "high", "medium", "low", "declining"
-- action: "invest" (high demand+reward), "maintain" (stable), "reduce" (low demand/high saturation)
-- weekly_hours: Total of all skills = ~20 hours
+- action: "invest" (high demand + low/medium user_score OR high growth potential), "maintain" (high user_score + stable), "reduce" (declining OR low user_score + saturated)
+- weekly_hours: Allocate more hours to low user_score skills with high demand/reward. Total = ~20 hours
 - Include top 8-12 skills from resume
 
-Prioritization:
-1. Prioritize skills with high demand + high reward + low risk
-2. Flag declining or saturated skills for reduction
-3. Balance investment across growth areas and core competencies
-4. Summary must clearly state what to invest in and what to reduce`;
+Prioritization Based on user_score:
+1. Skills with LOW user_score (<5) + HIGH demand: INVEST heavily (more weekly_hours)
+2. Skills with HIGH user_score (>7) + STABLE demand: MAINTAIN (fewer weekly_hours)
+3. Skills with HIGH user_score + DECLINING trend: REDUCE (recommend pivoting to high-demand skills)
+4. Balance: Allocate learning time to maximize ROI based on current proficiency gaps
+5. Summary must state what to invest in, maintain, and reduce - personalized for user's current level`;
 
   try {
     const chatCompletions = await openai.chat.completions.create({
@@ -202,9 +261,20 @@ app.post("/api/analyze-resume", upload.single("resume"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
+    const validMimeTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!validMimeTypes.includes(req.file.mimetype)) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: `Invalid file type: ${req.file.mimetype}. Please upload an image (JPG, PNG, GIF, or WebP).` });
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (req.file.size > maxSize) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: `File is too large. Maximum size is 5MB. Your file is ${(req.file.size / 1024 / 1024).toFixed(2)}MB.` });
+    }
+
     console.log("Extracting text from resume...");
     const resumeText = await extractResumeText(req.file.path);
-    
 
     fs.unlinkSync(req.file.path);
 
