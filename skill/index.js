@@ -113,6 +113,7 @@ Scoring Rules:
 - All scores: 1-10 scale
 - demand_score: Market demand (1=low, 10=very high)
 - reward_score: Career ROI/salary potential (1=low, 10=very high)
+- user_score: User's current proficiency (1=novice, 10=expert)
 - risk_score: Market risk (1=low, 10=very high) - inverse to safety
 - growth_trend: "very_high", "high", "medium", "low", "declining"
 - action: "invest" (high demand+reward), "maintain" (stable), "reduce" (low demand/high saturation)
