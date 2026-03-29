@@ -58,18 +58,80 @@ async function searchMarketData(skills) {
   }
 }
 
-function extractSkillsFromResume(resumeText) {
-  const commonSkills = [
-    "Python", "JavaScript", "React", "Node.js", "SQL", "Machine Learning",
-    "AI", "Backend", "Frontend", "Full Stack", "Java", "C++", "MongoDB",
-    "PostgreSQL", "Docker", "Kubernetes", "AWS", "Azure", "Git"
-  ];
-  
-  const found = commonSkills.filter(skill =>
-    resumeText.toLowerCase().includes(skill.toLowerCase())
-  );
-  
-  return found.length > 0 ? found.join(", ") : "General Tech Skills";
+async function extractSkillsFromResume(resumeText) {
+  try {
+    const extractionPrompt = `
+You are an expert at extracting technical and professional skills from resumes.
+
+Resume Text:
+${resumeText}
+
+Extract ALL technical skills, tools, frameworks, programming languages, and professional competencies mentioned in the resume.
+
+CRITICAL: Return ONLY a JSON array with no explanation, no markdown, no code blocks.
+
+Required JSON format (array of skill strings):
+["Python", "React", "Node.js", "AWS", "PostgreSQL", "Docker", ...]
+
+Rules:
+- Extract exact skill names as they appear or are commonly known
+- Include programming languages, frameworks, databases, cloud platforms, tools, methodologies
+- Remove duplicates
+- Sort by order of mention/importance
+- Only include skills that are explicitly mentioned in the resume
+- Return at least 3-5 skills, maximum 20 skills
+`;
+
+    const response = await openai.chat.completions.create({
+      model: "Qwen/Qwen2.5-7B-Instruct",
+      max_tokens: 500,
+      temperature: 0.3,
+      messages: [
+        {
+          role: "system",
+          content: "You are a skill extraction JSON generator. Return ONLY valid JSON array format with no other text."
+        },
+        {
+          role: "user",
+          content: extractionPrompt
+        }
+      ]
+    });
+
+    const responseText = response.choices[0].message.content;
+    console.log("Raw skill extraction response:", responseText);
+
+    let jsonText = responseText;
+    const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonText = jsonMatch[1];
+    }
+
+    const skills = JSON.parse(jsonText.trim());
+    
+    if (Array.isArray(skills) && skills.length > 0) {
+      return skills.join(", ");
+    }
+    
+    return "General Tech Skills";
+  } catch (error) {
+    console.error("Error extracting skills with AI:", error.message);
+    
+    // Fallback to basic extraction if AI fails
+    const commonSkills = [
+      "Python", "JavaScript", "React", "Node.js", "SQL", "Machine Learning",
+      "AI", "Backend", "Frontend", "Full Stack", "Java", "C++", "MongoDB",
+      "PostgreSQL", "Docker", "Kubernetes", "AWS", "Azure", "Git", "TypeScript",
+      "DevOps", "CI/CD", "REST APIs", "GraphQL", "TensorFlow", "PyTorch",
+      "System Design", "Microservices", "Linux", "Networking"
+    ];
+    
+    const found = commonSkills.filter(skill =>
+      resumeText.toLowerCase().includes(skill.toLowerCase())
+    );
+    
+    return found.length > 0 ? found.join(", ") : "General Tech Skills";
+  }
 }
 
 async function validateResumeText(resumeText) {
@@ -170,7 +232,7 @@ Required JSON format:
 
 Scoring Rules:
 - All scores: 1-10 scale
-- user_score: User's current proficiency (1=novice, 10=expert) - BASE ALL OTHER SCORES ON THIS
+- user_score: User's current proficiency, make sure you are ruthless here like even a 6 is considered intermediate (1=novice, 10=expert) - BASE ALL OTHER SCORES ON THIS
 - demand_score: Market demand adjusted for user_score (if user_score is high, focus on maintaining; if low, higher urgency to learn)
 - reward_score: Career ROI potential weighted by user proficiency (higher reward for low user_score + high demand)
 - risk_score: Market risk inversely affected by user_score (high user_score = lower risk, can handle market changes better)
@@ -221,7 +283,7 @@ Ensure all values are valid (scores 1-10, realistic salary ranges, correct actio
       console.error("Failed to parse:", jsonText);
       
 
-      const skillsList = extractSkillsFromResume(resumeText).split(', ');
+      const skillsList = (await extractSkillsFromResume(resumeText)).split(', ');
       return generateFallbackAnalysis(skillsList);
     }
   } catch (error) {
@@ -278,7 +340,8 @@ app.post("/api/analyze-resume", upload.single("resume"), async (req, res) => {
 
     fs.unlinkSync(req.file.path);
 
-    const skills = extractSkillsFromResume(resumeText);
+    const skills = await extractSkillsFromResume(resumeText);
+    console.log("Extracted skills:", skills);
     console.log("Analyzing skills with AI...");
     const analysis = await analyzeSkillsWithAI(resumeText, skills);
 
@@ -301,7 +364,7 @@ app.post("/api/analyze", express.json(), async (req, res) => {
       return res.status(400).json({ error: "resumeText required" });
     }
 
-    const skills = extractSkillsFromResume(resumeText);
+    const skills = await extractSkillsFromResume(resumeText);
     const analysis = await analyzeSkillsWithAI(resumeText, skills);
 
     res.json({ skills, analysis });
