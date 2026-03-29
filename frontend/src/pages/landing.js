@@ -1,6 +1,3 @@
-// ============================================
-// LANDING PAGE — Public marketing page
-// ============================================
 import { icons } from '../components/icons.js';
 
 export function renderLanding() {

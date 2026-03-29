@@ -90,12 +90,18 @@
   cursor: pointer;
 }
 .sidebar-nav-item svg { width: 20px; height: 20px; flex-shrink: 0; opacity: 0.6; }
-.sidebar-nav-item:hover { background: var(--bg-primary); color: var(--text-primary); }
+.sidebar-nav-item:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transform: translateX(2px);
+}
 .sidebar-nav-item:hover svg { opacity: 1; }
 .sidebar-nav-item.active {
-  background: var(--accent-primary-light);
+  background: linear-gradient(90deg, var(--accent-primary-light), rgba(27, 73, 101, 0.04));
   color: var(--accent-primary);
   font-weight: var(--fw-semibold);
+  border-left: 3px solid var(--accent-primary);
+  padding-left: calc(var(--space-4) - 3px);
 }
 .sidebar-nav-item.active svg { opacity: 1; color: var(--accent-primary); }
 

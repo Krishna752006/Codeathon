@@ -1,13 +1,9 @@
-// ============================================
-// ONBOARDING — Resume Upload & Analysis
-// ============================================
 import { icons } from '../components/icons.js';
 
 const API_BASE = 'http://localhost:5000/api';
 let analysisResults = null;
 
 export function renderOnboarding() {
-  // If analysis is done, show results
   if (analysisResults) {
     return renderResults();
   }
@@ -66,7 +62,7 @@ export function renderOnboarding() {
 }
 
 function renderResults() {
-  const { skills, analysis } = analysisResults;
+  const { analysis } = analysisResults;
   
   return `
   <div class="onboarding-page">
@@ -80,12 +76,12 @@ function renderResults() {
         <p class="onboarding-subtitle">Based on your resume and current market data</p>
       </div>
 
-      <div class="onboarding-card" id="onboarding-content">
-        <div style="padding:20px;">
+      <div class="onboarding-card onboarding-card-results" id="onboarding-content">
+        <div style=\"padding:20px;\">
           ${renderSkillsTable(analysis)}
           
-          <div style="margin-top:30px; display:flex; gap:12px;">
-            <button id="new-resume-btn" class="btn btn-primary" style="flex:1; cursor:pointer;">
+          <div style=\"margin-top:30px; display:flex; gap:12px;\">
+            <button id=\"new-resume-btn\" class=\"btn btn-primary\" style=\"flex:1; cursor:pointer;\">
               Upload Another Resume
             </button>
           </div>
@@ -96,42 +92,83 @@ function renderResults() {
 }
 
 function renderSkillsTable(analysis) {
-  if (!analysis || !Array.isArray(analysis)) {
-    return '<p style="color:var(--text-secondary);">Unable to parse analysis results</p>';
+  if (!analysis) {
+    return '<p style="color:var(--text-secondary);">Unable to load analysis results</p>';
+  }
+
+
+  const summary = analysis.summary || '';
+  const skillsData = analysis.skills_analysis || [];
+
+  if (!Array.isArray(skillsData) || skillsData.length === 0) {
+    return '<p style="color:var(--text-secondary);">No skills data available</p>';
   }
 
   return `
-  <div style="overflow-x:auto;">
-    <table style="width:100%; border-collapse:collapse;">
-      <thead>
-        <tr style="border-bottom:2px solid var(--bg-tertiary);">
-          <th style="padding:12px; text-align:left; font-weight:600;">Skill</th>
-          <th style="padding:12px; text-align:center; font-weight:600;">Demand</th>
-          <th style="padding:12px; text-align:center; font-weight:600;">Growth</th>
-          <th style="padding:12px; text-align:center; font-weight:600;">Saturation</th>
-          <th style="padding:12px; text-align:left; font-weight:600;">Salary Range</th>
-          <th style="padding:12px; text-align:center; font-weight:600;">Hours/Week</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${analysis.map((item, idx) => `
-          <tr style="border-bottom:1px solid var(--bg-tertiary); ${idx % 2 === 0 ? 'background:var(--bg-secondary);' : ''}">
-            <td style="padding:12px; font-weight:500;">${item.skill || 'N/A'}</td>
-            <td style="padding:12px; text-align:center; color:var(--accent-primary); font-weight:600;">${item.demand || 0}/10</td>
-            <td style="padding:12px; text-align:center; color:var(--accent-secondary); font-weight:600;">${item.growth || 0}/10</td>
-            <td style="padding:12px; text-align:center; color:var(--text-secondary);">${item.saturation || 0}/10</td>
-            <td style="padding:12px;">${item.salary_range || 'N/A'}</td>
-            <td style="padding:12px; text-align:center; font-weight:600;">${item.recommended_hours || 0}h</td>
+  <div>
+    ${summary ? `
+      <div style="background:var(--accent-primary-light); border-left:4px solid var(--accent-primary); padding:16px; border-radius:6px; margin-bottom:24px;">
+        <p style="font-weight:600; color:var(--accent-primary); margin:0; font-size:14px;">Strategic Recommendation</p>
+        <p style="color:var(--text-primary); margin:8px 0 0 0; font-size:15px; line-height:1.5;">${summary}</p>
+      </div>
+    ` : ''}
+
+    <div style="overflow-x:auto;">
+      <table style="width:100%; min-width:1000px; border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--bg-tertiary); background:var(--bg-secondary);">
+            <th style="padding:14px 16px; text-align:left; font-weight:600; font-size:13px; white-space:nowrap;">Skill</th>
+            <th style="padding:14px 16px; text-align:center; font-weight:600; font-size:13px; white-space:nowrap;">Demand</th>
+            <th style="padding:14px 16px; text-align:center; font-weight:600; font-size:13px; white-space:nowrap;">Reward</th>
+            <th style="padding:14px 16px; text-align:center; font-weight:600; font-size:13px; white-space:nowrap;">Risk</th>
+            <th style="padding:14px 16px; text-align:left; font-weight:600; font-size:13px; white-space:nowrap;">Growth Trend</th>
+            <th style="padding:14px 16px; text-align:center; font-weight:600; font-size:13px; white-space:nowrap;">Action</th>
+            <th style="padding:14px 16px; text-align:center; font-weight:600; font-size:13px; white-space:nowrap;">Salary Range</th>
           </tr>
-        `).join('')}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          ${skillsData.map((item, idx) => {
+            const actionColor = item.action === 'invest' ? 'var(--invest)' : item.action === 'reduce' ? 'var(--reduce)' : 'var(--hold)';
+            const actionBg = item.action === 'invest' ? 'var(--invest-bg)' : item.action === 'reduce' ? 'var(--reduce-bg)' : 'var(--hold-bg)';
+            
+            return `
+              <tr style="border-bottom:1px solid var(--bg-tertiary); ${idx % 2 === 0 ? 'background:var(--bg-primary);' : ''}">
+                <td style="padding:14px 16px; font-weight:500; color:var(--text-primary);">${item.skill || 'N/A'}</td>
+                <td style="padding:14px 16px; text-align:center;">
+                  <div style="display:inline-block; background:var(--accent-primary-light); color:var(--accent-primary); padding:4px 8px; border-radius:4px; font-weight:600; font-size:13px;">
+                    ${item.demand_score || 0}/10
+                  </div>
+                </td>
+                <td style="padding:14px 16px; text-align:center;">
+                  <div style="display:inline-block; background:var(--accent-secondary-light); color:var(--accent-secondary); padding:4px 8px; border-radius:4px; font-weight:600; font-size:13px;">
+                    ${item.reward_score || 0}/10
+                  </div>
+                </td>
+                <td style="padding:14px 16px; text-align:center;">
+                  <div style="display:inline-block; background:rgba(155, 44, 44, 0.1); color:var(--reduce); padding:4px 8px; border-radius:4px; font-weight:600; font-size:13px;">
+                    ${item.risk_score || 0}/10
+                  </div>
+                </td>
+                <td style="padding:14px 16px; text-align:left; color:var(--text-secondary);">
+                  <span style="text-transform:capitalize;">${(item.growth_trend || 'N/A').replace(/_/g, ' ')}</span>
+                </td>
+                <td style="padding:14px 16px; text-align:center;">
+                  <span style="display:inline-block; background:${actionBg}; color:${actionColor}; padding:4px 10px; border-radius:4px; font-weight:600; font-size:12px; text-transform:uppercase;">
+                    ${item.action || 'N/A'}
+                  </span>
+                </td>
+                <td style="padding:14px 16px; text-align:center; color:var(--text-primary); font-size:13px;">${item.market_salary || 'N/A'}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
   </div>`;
 }
 
 export function bindOnboarding() {
   if (analysisResults) {
-    // Results page bindings
     const newResumeBtn = document.getElementById('new-resume-btn');
 
     if (newResumeBtn) {
@@ -144,8 +181,6 @@ export function bindOnboarding() {
     }
     return;
   }
-
-  // Upload page bindings
   const uploadBtn = document.getElementById('upload-btn');
   const resumeFile = document.getElementById('resume-file');
   const loading = document.getElementById('loading');
@@ -162,7 +197,7 @@ export function bindOnboarding() {
       const file = e.target.files?.[0];
       if (!file) return;
 
-      // Show loading
+
       document.getElementById('upload-form').style.display = 'none';
       loading.style.display = 'block';
       error.style.display = 'none';
@@ -181,9 +216,15 @@ export function bindOnboarding() {
         }
 
         const data = await response.json();
+        console.log('API Response:', data);
+
+        if (!data.analysis) {
+          throw new Error('No analysis data in response. API may have failed to parse resume.');
+        }
+
         analysisResults = data;
 
-        // Re-render with results
+
         const appEl = document.getElementById('app');
         appEl.innerHTML = renderResults();
         bindOnboarding();

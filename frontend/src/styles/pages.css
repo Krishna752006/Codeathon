@@ -48,16 +48,17 @@
   font-size: var(--fs-4xl);
   font-weight: var(--fw-bold);
   color: var(--text-primary);
-  line-height: 1.1;
-  margin-bottom: var(--space-5);
-  letter-spacing: -0.5px;
+  line-height: 1.15;
+  margin-bottom: var(--space-6);
+  letter-spacing: -0.6px;
 }
 .landing-hero-title .highlight { color: var(--accent-primary); }
 .landing-hero-subtitle {
   font-size: var(--fs-md);
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.7;
   margin-bottom: var(--space-8);
+  font-weight: var(--fw-regular);
 }
 .landing-hero-actions { display: flex; gap: var(--space-3); align-items: center; }
 .landing-hero-visual {
@@ -68,12 +69,13 @@
   border: 1px solid var(--border-light);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
-  box-shadow: var(--shadow-lg);
-  transform: perspective(1200px) rotateY(-4deg) rotateX(2deg);
-  transition: transform var(--transition-slow);
+  box-shadow: 0 12px 40px rgba(27, 73, 101, 0.1);
+  transform: perspective(1200px) rotateY(-3deg) rotateX(1deg);
+  transition: transform var(--transition-slow), box-shadow var(--transition-slow);
 }
 .landing-mock-dashboard:hover {
-  transform: perspective(1200px) rotateY(-1deg) rotateX(0.5deg);
+  transform: perspective(1200px) rotateY(-0.5deg) rotateX(0deg);
+  box-shadow: 0 16px 50px rgba(27, 73, 101, 0.15);
 }
 
 .landing-how {
@@ -102,12 +104,16 @@
 .landing-step {
   text-align: center;
   padding: var(--space-6);
+  transition: transform var(--transition-base);
+}
+.landing-step:hover {
+  transform: translateY(-4px);
 }
 .landing-step-number {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--accent-primary-light);
+  background: linear-gradient(135deg, var(--accent-primary-light), rgba(45, 106, 79, 0.08));
   color: var(--accent-primary);
   display: flex;
   align-items: center;
@@ -115,6 +121,12 @@
   font-size: var(--fs-lg);
   font-weight: var(--fw-bold);
   margin: 0 auto var(--space-4);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  box-shadow: 0 2px 8px rgba(27, 73, 101, 0.08);
+}
+.landing-step:hover .landing-step-number {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(27, 73, 101, 0.15);
 }
 .landing-step-title {
   font-size: var(--fs-md);
@@ -142,12 +154,19 @@
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
+  transition: all var(--transition-base);
+  box-shadow: 0 1px 3px rgba(26, 26, 46, 0.04);
+}
+.landing-trust-item:hover {
+  border-color: rgba(27, 73, 101, 0.15);
+  box-shadow: 0 6px 20px rgba(26, 26, 46, 0.08);
+  transform: translateY(-2px);
 }
 .landing-trust-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: var(--accent-secondary-light);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--accent-secondary-light), rgba(61, 139, 122, 0.08));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,10 +191,11 @@
   text-align: center;
 }
 .landing-cta-card {
-  background: var(--accent-primary);
+  background: linear-gradient(135deg, var(--accent-primary), #153d55);
   border-radius: var(--radius-xl);
   padding: var(--space-12) var(--space-8);
   color: var(--text-inverse);
+  box-shadow: 0 8px 32px rgba(27, 73, 101, 0.2);
 }
 .landing-cta-title {
   font-size: var(--fs-2xl);
@@ -191,8 +211,12 @@
   background: var(--bg-white);
   color: var(--accent-primary);
   font-weight: var(--fw-semibold);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-.landing-cta .btn:hover { box-shadow: var(--shadow-lg); }
+.landing-cta .btn:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
 
 .landing-footer {
   max-width: 1200px;
@@ -350,12 +374,12 @@
   padding: var(--space-10) var(--space-8);
 }
 .onboarding-container {
-  max-width: 720px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 .onboarding-header {
   text-align: center;
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-8);
 }
 .onboarding-title {
   font-size: var(--fs-2xl);
@@ -371,8 +395,15 @@
   background: var(--bg-white);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-xl);
-  padding: var(--space-8);
   box-shadow: var(--shadow-md);
+}
+.onboarding-card-upload {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--space-10);
+}
+.onboarding-card-results {
+  padding: var(--space-12);
 }
 .onboarding-actions {
   display: flex;
