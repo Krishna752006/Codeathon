@@ -100,6 +100,7 @@ Required JSON format:
       "demand_score": 9,
       "reward_score": 8,
       "risk_score": 3,
+      "user_score": 7,
       "market_salary": "120k-180k",
       "growth_trend": "high",
       "saturation": "medium",
